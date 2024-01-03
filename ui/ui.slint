@@ -6,8 +6,14 @@ export  component My_App inherits Window {
     title: "谷歌AI测试";
     icon: @image-url("../resources/logo/icons.png");
 
+
     callback send-message(string);
     in-out property <string> reply ;
+    in-out property <string> version;
+    in-out property <string> new-version;
+    in-out property <bool> updata;
+    in-out property <string> updata-path;
+    callback updata-btn(string);
     VerticalLayout {
         padding: 10px;
         spacing: 15px;
@@ -49,6 +55,29 @@ export  component My_App inherits Window {
                 }
             }
             
+        }
+        HorizontalLayout {
+            alignment: end;
+            if updata == true : HorizontalLayout {
+                spacing: 10px;
+                Rectangle {
+                    Text {
+                        text: @tr("当前版本：{}, 可升级版本：{}",version,new-version);
+                        color: red;
+                    }
+                }
+                Button {
+                    text: "升级";
+                    clicked => {
+                        updata-btn(updata-path)
+                    }
+                }
+            }
+            
+            if updata == false : Text{
+                text: @tr("当前版本：{}",version);
+                color: green;
+            }
         }
 
     }

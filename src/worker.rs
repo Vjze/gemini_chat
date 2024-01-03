@@ -1,10 +1,13 @@
+use std::ops::RangeBounds;
+
 use futures::{future::Fuse, FutureExt};
 use slint::ComponentHandle;
 use tokio::sync::mpsc::{UnboundedSender, UnboundedReceiver};
-use  crate::{My_App, get_message::chat_gemini_say};
+use  crate::{My_App, get_message::chat_gemini_say, updata::{get_last_release, download_file, updata}};
 #[derive(Debug)]
 pub enum WorkerMessage {
     SendMessage { action: String },
+    DownMessage { download_path: String},
     Quit,
 }
 
@@ -19,10 +22,6 @@ impl Worker {
         let worker_thread = std::thread::spawn({
             let handle_weak = query.as_weak();
             move || {
-                // tokio::runtime::Runtime::new()
-                //     .unwrap()
-                //     .block_on(query_worker_loop(r, handle_weak))
-                //     .unwrap()
                 let rt = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
@@ -48,14 +47,29 @@ async fn query_worker_loop(
     mut r: UnboundedReceiver<WorkerMessage>,
     handle: slint::Weak<My_App>,
 ) -> tokio::io::Result<()> {
+    let run_get_updata_future = get_last_release(handle.clone()).fuse();
     let run_send_message_future = Fuse::terminated();
+    let run_download_message_future = Fuse::terminated();
     tokio::pin!(
-        run_send_message_future
+        run_send_message_future,run_get_updata_future,run_download_message_future
     );
     loop {
         let m = futures::select! {
                 res = run_send_message_future => {
                     res?;
+                    continue;
+                }
+                res = run_get_updata_future => {
+                    res?;
+                    continue;
+                }
+                res = run_download_message_future => {
+                    // res?;
+                    let _ = if let Ok((relaunch_path, cleanup_path)) = res {
+                        updata(relaunch_path,cleanup_path)
+                    }else {
+                        continue;
+                    };
                     continue;
                 }
                 
@@ -72,6 +86,9 @@ async fn query_worker_loop(
                 run_send_message_future.set(chat_gemini_say(action,handle.clone()).fuse())
             }
             WorkerMessage::Quit => return Ok(()),
+            WorkerMessage::DownMessage { download_path } => {
+                run_download_message_future.set(download_file(download_path,handle.clone()).fuse())
+            },
            
         }
     }
