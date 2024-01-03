@@ -1,0 +1,55 @@
+
+import { LineEdit , Button, ScrollView, TextEdit} from "std-widgets.slint";
+export  component My_App inherits Window {
+    width: 800px;
+    height: 600px;
+    title: "谷歌AI测试";
+    icon: @image-url("../resources/logo/icons.png");
+
+    callback send-message(string);
+    in-out property <string> reply ;
+    VerticalLayout {
+        padding: 10px;
+        spacing: 15px;
+        HorizontalLayout {
+            spacing: 15px;
+            Image {
+                source: @image-url("../resources/logo/icons.png");
+                width: 50px;
+                height: 50px;
+            }
+            input := LineEdit {
+                y:10px;
+                height: 35px;
+                placeholder-text: "输入问题.....";
+                font-size: 15px;
+                accepted => {
+                    send-message(input.text)
+                }
+            }
+                Button {
+                    y:10px;
+                    height: 35px;
+                    text: "发送";
+                    
+                    clicked => {
+                        send-message(
+                            input.text
+                        )
+                    }
+                }
+        }
+        ScrollView {
+            HorizontalLayout {
+                TextEdit {
+                    text: reply;
+                    font-size: 16px;
+                    enabled: true;
+                    read-only: true;
+                }
+            }
+            
+        }
+
+    }
+}

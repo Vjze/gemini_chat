@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Terminal=false
+Exec=print_tool
+Name=print_tool
+Icon=logo
+Categories=Tools;
